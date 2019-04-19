@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Ups\Model;
 
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\DataObject;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\HTTP\ClientFactory;
 use Magento\Framework\Xml\Security;
 use Magento\Quote\Model\Quote\Address\RateRequest;
@@ -14,6 +17,7 @@ use Magento\Quote\Model\Quote\Address\RateResult\Error;
 use Magento\Shipping\Model\Carrier\AbstractCarrierOnline;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
 use Magento\Shipping\Model\Rate\Result;
+use Magento\Shipping\Model\Shipment\Request;
 use Magento\Shipping\Model\Simplexml\Element;
 use Magento\Ups\Helper\Config;
 
@@ -135,6 +139,11 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     private $httpClientFactory;
 
     /**
+     * @var ShipmentCreatorInterface
+     */
+    private $creator;
+
+    /**
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
      * @param \Psr\Log\LoggerInterface $logger
@@ -154,6 +163,7 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
      * @param Config $configHelper
      * @param ClientFactory $httpClientFactory
      * @param array $data
+     * @param ShipmentCreatorInterfaceFactory|null $shipmentCreatorFactory
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
@@ -176,7 +186,8 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         \Magento\Framework\Locale\FormatInterface $localeFormat,
         Config $configHelper,
         ClientFactory $httpClientFactory,
-        array $data = []
+        array $data = [],
+        ?ShipmentCreatorInterfaceFactory $shipmentCreatorFactory = null
     ) {
         parent::__construct(
             $scopeConfig,
@@ -199,6 +210,19 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         $this->httpClientFactory = $httpClientFactory;
         $this->_localeFormat = $localeFormat;
         $this->configHelper = $configHelper;
+        $shipmentCreatorFactory = $shipmentCreatorFactory
+            ?? ObjectManager::getInstance()->get(ShipmentCreatorInterfaceFactory::class);
+        $this->creator = $shipmentCreatorFactory->create([
+            'configData' => [
+                'shipper_number' => $this->getConfigData('shipper_number'),
+                'dest_type' => $this->getConfigData('dest_type'),
+                'username' => $this->getConfigData('username'),
+                'password' => $this->getConfigData('password'),
+                'access_license_number' => $this->getConfigData('access_license_number'),
+                'confirm_url' => $this->getShipConfirmUrl(),
+                'accept_url' => $this->getShipAcceptUrl()
+            ]
+        ]);
     }
 
     /**
@@ -1776,5 +1800,42 @@ XMLAuth;
         }
 
         return self::DELIVERY_CONFIRMATION_SHIPMENT;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function requestToShipment($request)
+    {
+        if (!is_array($request->getPackages()) || !$request->getPackages()) {
+            throw new LocalizedException(__('No packages for request'));
+        }
+        /** @var Request[] $packages */
+        $packages = [];
+        foreach ($request->getPackages() as $packageId => $packageData) {
+            $package = clone $request;
+            $package->setPackageId($packageId);
+            $package->setPackagingType($packageData['params']['container']);
+            $package->setPackageWeight($packageData['params']['weight']);
+            $package->setPackageParams(new \Magento\Framework\DataObject($packageData['params']));
+            $package->setPackageItems($packageData['items']);
+            $packages[] = $package;
+        }
+
+        $response = new DataObject();
+        try {
+            $response->setInfo(
+                array_map(
+                    function (CreatedShipment $shipment) {
+                        return new DataObject(['tracking_number' => $shipment->getTrackingNumber(), 'label_content' => $shipment->getLabelContent()]);
+                    },
+                    $this->creator->create($packages)
+                )
+            );
+        } catch (ShipmentCreationException $exception) {
+            $response->setErrors($exception->getErrors());
+        }
+
+        return $response;
     }
 }

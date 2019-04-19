@@ -28,4 +28,5 @@
             </argument>
         </arguments>
     </type>
+    <preference for="Magento\Ups\Model\ShipmentCreatorInterface" type="Magento\Ups\Model\AsyncShipmentCreator" />
 </config>

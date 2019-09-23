@@ -10,6 +10,8 @@ namespace Magento\Framework\GraphQl\Schema\Type\Output\ElementMapper\Formatter;
 use Magento\Framework\GraphQl\Config\Data\WrappedTypeProcessor;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Config\Element\TypeInterface;
+use Magento\Framework\GraphQl\Query\BatchResolverWrapper;
+use Magento\Framework\GraphQl\Query\Resolver\BatchResolverInterface;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\Input\InputMapper;
 use Magento\Framework\GraphQl\Schema\Type\Output\ElementMapper\FormatterInterface;
@@ -149,8 +151,12 @@ class Fields implements FormatterInterface
         }
 
         if ($field->getResolver() != null) {
-            /** @var ResolverInterface $resolver */
+            /** @var ResolverInterface|BatchResolverInterface $resolver */
             $resolver = $this->objectManager->get($field->getResolver());
+            if ($resolver instanceof BatchResolverInterface) {
+                /** @var BatchResolverWrapper $resolver */
+                $resolver = $this->objectManager->create(BatchResolverWrapper::class, ['resolver' => $resolver]);
+            }
 
             $fieldConfig['resolve'] =
                 function ($value, $args, $context, $info) use ($resolver, $field) {

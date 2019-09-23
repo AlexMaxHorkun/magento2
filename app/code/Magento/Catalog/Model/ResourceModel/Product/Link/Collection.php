@@ -122,6 +122,17 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
     }
 
     /**
+     * @param array $ids
+     * @return $this
+     */
+    public function addProductIdsFilter(array $ids): self
+    {
+        $this->addFieldToFilter('product_id', ['in' => $ids]);
+
+        return $this;
+    }
+
+    /**
      * Join attributes
      *
      * @return $this

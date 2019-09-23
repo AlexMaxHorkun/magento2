@@ -75,4 +75,30 @@ class RelatedProductDataProvider
 
         return $collection->getItems();
     }
+
+    /**
+     * @param array $productIds
+     * @param int $linkType
+     * @return string[][] keys - IDs, values - list of linked product IDs.
+     */
+    public function getRelations(array $productIds, int $linkType): array
+    {
+        /** @var Link $link */
+        $link = $this->linkFactory->create([ 'data' => [
+            'link_type_id' => $linkType,
+        ]]);
+        $collection = $link->getLinkCollection();
+        $collection->addProductIdsFilter($productIds);
+        $collection->addLinkTypeIdFilter();
+        $map = [];
+        /** @var Link $item */
+        foreach ($collection as $item) {
+            if (!array_key_exists($item->getProductId(), $map)) {
+                $map[$item->getProductId()] = [];
+            }
+            $map[$item->getProductId()][] = $item->getLinkedProductId();
+        }
+
+        return $map;
+    }
 }

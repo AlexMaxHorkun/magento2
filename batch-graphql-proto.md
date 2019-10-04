@@ -43,3 +43,8 @@ To test the performance:
 * Performance difference __~200ms__ faster with batch processing in Developer mode
 * __2__ _resolve()_ calls to _RelatedProducts/CrossSellProducts_ resolvers
   with batch processing vs __20__ calls with existing resolvers
+ 
+ 
+### Remote ASYNC/SYNC Service Contract Test Results:
+* 1000ms difference in favour of asynchronous HTTP requests (1700ms/2700ms)
+* 4 HTTP requests to the service contract via REST API made

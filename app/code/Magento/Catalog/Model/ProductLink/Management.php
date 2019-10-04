@@ -7,6 +7,7 @@
 namespace Magento\Catalog\Model\ProductLink;
 
 use Magento\Catalog\Api\Data;
+use Magento\Catalog\Model\LinkedProduct;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\InputException;
@@ -107,5 +108,23 @@ class Management implements \Magento\Catalog\Api\ProductLinkManagementInterface
         }
 
         return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLinkedItemsForProducts(array $ids, string $type): array
+    {
+        $linked = [];
+        $ids = array_unique($ids);
+        foreach ($ids as $id) {
+            $product = $this->productRepository->getById($id);
+            $links = $this->getLinkedItemsByType($product->getSku(), $type);
+            foreach ($links as $link) {
+                $linked[] = new LinkedProduct($product->getId(), $this->productRepository->get($link->getLinkedProductSku()));
+            }
+        }
+
+        return $linked;
     }
 }

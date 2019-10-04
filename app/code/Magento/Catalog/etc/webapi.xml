@@ -418,6 +418,12 @@
             <resource ref="Magento_Catalog::catalog"/>
         </resources>
     </route>
+    <route url="/V1/products/links/:type/products" method="GET">
+        <service class="Magento\Catalog\Api\ProductLinkManagementInterface" method="getLinkedItemsForProducts"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
     <route url="/V1/products/:sku/links" method="POST">
         <service class="Magento\Catalog\Api\ProductLinkManagementInterface" method="setProductLinks"/>
         <resources>

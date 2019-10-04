@@ -4,6 +4,8 @@
  * See COPYING.txt for license details.
  */
 
+declare(strict_types=1);
+
 namespace Magento\Catalog\Api;
 
 /**
@@ -20,6 +22,13 @@ interface ProductLinkManagementInterface
      * @return \Magento\Catalog\Api\Data\ProductLinkInterface[]
      */
     public function getLinkedItemsByType($sku, $type);
+
+    /**
+     * @param int[] $ids
+     * @param int $type
+     * @return \Magento\Catalog\Api\Data\LinkedProductInterface[]
+     */
+    public function getLinkedItemsForProducts(array $ids, string $type): array;
 
     /**
      * Assign a product link to another product

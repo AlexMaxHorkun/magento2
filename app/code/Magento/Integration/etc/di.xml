@@ -35,4 +35,5 @@
     <type name="Magento\Customer\Model\Customer">
         <plugin name="revokeTokensFromInactiveCustomers" type="Magento\Integration\Plugin\Model\CustomerUser" />
     </type>
+    <preference for="Magento\Integration\Model\TokenServiceInterface" type="Magento\Integration\Model\OpaqueTokenService" />
 </config>

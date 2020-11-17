@@ -280,4 +280,10 @@
             <resource ref="Magento_Customer::manage"/>
         </resources>
     </route>
+    <route url="/V1/customers/auth/check/:token" method="GET">
+        <service class="Magento\Customer\Api\AuthServiceClientInterface" method="checkToken"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
 </routes>

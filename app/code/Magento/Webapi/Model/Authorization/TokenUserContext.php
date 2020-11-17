@@ -8,6 +8,7 @@ namespace Magento\Webapi\Model\Authorization;
 
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\App\ObjectManager;
+use Magento\Integration\Model\JwtService;
 use Magento\Integration\Model\Oauth\Token;
 use Magento\Integration\Model\Oauth\TokenFactory;
 use Magento\Integration\Api\IntegrationServiceInterface;
@@ -15,6 +16,7 @@ use Magento\Framework\Webapi\Request;
 use Magento\Framework\Stdlib\DateTime\DateTime as Date;
 use Magento\Framework\Stdlib\DateTime;
 use Magento\Integration\Helper\Oauth\Data as OauthHelper;
+use Magento\Integration\Model\TokenServiceInterface;
 
 /**
  * A user context determined by tokens in a HTTP request Authorization header.
@@ -67,6 +69,11 @@ class TokenUserContext implements UserContextInterface
     private $oauthHelper;
 
     /**
+     * @var TokenServiceInterface
+     */
+    private $jwtService;
+
+    /**
      * Initialize dependencies.
      *
      * @param Request $request
@@ -75,6 +82,7 @@ class TokenUserContext implements UserContextInterface
      * @param DateTime|null $dateTime
      * @param Date|null $date
      * @param OauthHelper|null $oauthHelper
+     * @param TokenServiceInterface|null $jwtService
      */
     public function __construct(
         Request $request,
@@ -82,7 +90,8 @@ class TokenUserContext implements UserContextInterface
         IntegrationServiceInterface $integrationService,
         DateTime $dateTime = null,
         Date $date = null,
-        OauthHelper $oauthHelper = null
+        OauthHelper $oauthHelper = null,
+        ?TokenServiceInterface $jwtService = null
     ) {
         $this->request = $request;
         $this->tokenFactory = $tokenFactory;
@@ -96,6 +105,7 @@ class TokenUserContext implements UserContextInterface
         $this->oauthHelper = $oauthHelper ?: ObjectManager::getInstance()->get(
             OauthHelper::class
         );
+        $this->jwtService = $jwtService ?? ObjectManager::getInstance()->get(TokenServiceInterface::class);
     }
 
     /**
@@ -174,13 +184,17 @@ class TokenUserContext implements UserContextInterface
         }
 
         $bearerToken = $headerPieces[1];
-        $token = $this->tokenFactory->create()->loadByToken($bearerToken);
-
-        if (!$token->getId() || $token->getRevoked() || $this->isTokenExpired($token)) {
-            $this->isRequestProcessed = true;
-
-            return;
-        }
+        $customerId = $this->jwtService->load($bearerToken);
+        $token = ObjectManager::getInstance()->create(
+            Token::class,
+            [
+                'data' => [
+                    'customer_id' => $customerId,
+                    'user_type' => UserContextInterface::USER_TYPE_CUSTOMER,
+                    'type' => Token::TYPE_ACCESS
+                ]
+            ]
+        );
 
         $this->setUserDataViaToken($token);
         $this->isRequestProcessed = true;

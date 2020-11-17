@@ -346,6 +346,7 @@
         <arguments>
             <argument name="commands" xsi:type="array">
                 <item name="upgradeHashAlgorithmCommand" xsi:type="object">Magento\Customer\Console\Command\UpgradeHashAlgorithmCommand</item>
+                <item name="runGrpcAuth" xsi:type="object">Magento\Customer\Console\Command\RunAuthService</item>
             </argument>
         </arguments>
     </type>
@@ -533,4 +534,5 @@
             </argument>
         </arguments>
     </type>
+    <preference for="Magento\Customer\Api\AuthServiceClientInterface" type="Magento\Customer\Model\AuthServiceClientImpl" />
 </config>

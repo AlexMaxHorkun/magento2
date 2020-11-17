@@ -1,0 +1,24 @@
+syntax = "proto3";
+package magento.customer.model;
+
+message TokenArg {
+    string token = 1;
+}
+
+message CustomerData {
+    string customerId = 1;
+    string firstName = 2;
+    string lastName = 3;
+}
+
+message TokenResponse {
+    bool tokenFound = 1;
+    oneof result {
+        CustomerData found = 2;
+    }
+}
+
+
+service AuthService {
+    rpc introspect(TokenArg) returns (TokenResponse);
+}

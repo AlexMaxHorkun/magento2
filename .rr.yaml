@@ -1,0 +1,19 @@
+grpc:
+  listen: "tcp://127.0.0.1:9001"
+  proto: "perftest.proto"
+  workers:
+    command: "php bin/magento customer:grpc:auth-service"
+    pool:
+      numWorkers: 4
+
+metrics:
+  address: 127.0.0.1:2112
+
+limit:
+  interval: 1
+  services:
+    grpc:
+      maxMemory: 100
+      TTL: 0
+      idleTTL: 0
+      execTTL: 60
